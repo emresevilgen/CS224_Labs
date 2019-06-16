@@ -1,0 +1,367 @@
+	.data	
+menuStr:	.asciiz "\n1.Create an array \n2.Sort the array \n3.Calculate the mode and median\n4.Print the array\n5.Quit\nEnter your selection: "
+errorSelection:	.asciiz "\nError: Invalid selection\n"
+enterSize: 	.asciiz "\nEnter the size of the integer array: "
+enterInteger:	.asciiz "\nEnter the integer for the array: "	
+printArrayStr:	.asciiz "\nArray: "
+printMode:	.asciiz "\nMode: "
+printMedian:	.asciiz "\nMedian: "
+printSpace:	.asciiz " "
+	.text
+main:
+	getSelection: 
+		li $v0, 4
+		la $a0, menuStr
+		syscall
+	
+		li $v0, 5
+		syscall
+		move $s3, $v0
+		beq $s3, 1, jumpReadArray
+		beq $s3, 2, jumpInsertionSort
+		beq $s3, 3, jumpMedianMode
+		beq $s3, 4, jumpPrintArray
+		beq $s3, 5, main_exit	
+	#Selection Error
+	li $v0, 4
+	la $a0, errorSelection
+	syscall
+	
+	j getSelection
+	
+	jumpReadArray:
+		move $a0, $s0
+		move $a1, $s1
+		
+		jal readArray
+		move $s0, $v0 #First adress of the array
+		move $s1, $v1 #Number of integers
+		j getSelection
+		
+	jumpInsertionSort:
+		move $a0, $s0
+		move $a1, $s1
+		jal insertionSort
+		j getSelection
+
+	jumpMedianMode:
+		move $a0, $s0
+		move $a1, $s1
+		jal medianMode
+		move $s3, $v0
+		move $s2, $v1
+		
+		li $v0, 4
+		la $a0, printMode
+		syscall
+		
+		li $v0, 1
+		move $a0, $s2
+		syscall
+		
+		li $v0, 4
+		la $a0, printMedian
+		syscall
+		
+		li $v0, 1
+		move $a0, $s3
+		syscall
+		
+		j getSelection	
+		
+	jumpPrintArray:
+		move $a0, $s0
+		move $a1, $s1
+		jal printArray
+		j getSelection
+	
+main_exit:
+	li $v0, 10
+	syscall
+
+readArray:
+	addi $sp, $sp, -4
+	sw $s0, 0($sp)
+	addi $sp, $sp, -4
+	sw $s1, 0($sp)
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	addi $sp, $sp, -4
+	sw $s3, 0($sp)
+	addi $sp, $sp, -4
+	sw $ra, 0($sp),
+	
+	move $s0, $a0
+	move $s1, $a1
+	li $s0,0  #Number of elements
+	li $s1,0  #First index of the array
+	li $s2,100 #For check below 
+	li $s3,0 #Counter
+
+	
+	la $a0, enterSize
+	li $v0, 4
+	syscall
+	li $v0, 5
+	syscall
+	addi $s0,$v0,0   
+	   
+	mul $a0, $s0, 4
+	li $v0, 9
+	syscall
+	move $s1, $v0 #First index of the array
+	
+
+	
+	getIntegers:
+		bge $s3,$s0,readArray_exit
+		
+		la $a0, enterInteger
+		li $v0, 4
+		syscall
+		
+		li $v0, 5
+		syscall
+		bgt $v0,$s2,getIntegers
+		sw $v0,($s1)
+		addi $s3,$s3,1
+		addi $s1,$s1,4
+		j getIntegers
+			
+readArray_exit:
+	addi $v1,$s3,0
+	mul $s3,$s3,4
+	sub $v0,$s1,$s3
+
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4	
+	lw $s3, 0($sp)
+	addi $sp, $sp, 4
+	lw $s2, 0($sp)
+	addi $sp, $sp, 4
+	lw $s1, 0($sp)
+	addi $sp, $sp, 4
+	lw $s0, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
+
+insertionSort:
+	addi $sp, $sp, -4
+	sw $s0, 0($sp)
+	addi $sp, $sp, -4
+	sw $s1, 0($sp)
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	addi $sp, $sp, -4
+	sw $s3, 0($sp)
+	addi $sp, $sp, -4
+	sw $s4, 0($sp)  
+	addi $sp, $sp, -4
+	sw $s5, 0($sp)		
+	addi $sp, $sp, -4
+	sw $s6, 0($sp)
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	move $s0, $a0
+	move $s1, $a1
+	#i ? 1
+	#while i < length(A)
+	#    j ? i
+	#    while j > 0 and A[j-1] > A[j]
+	#        swap A[j] and A[j-1]
+	#        j ? j - 1
+	#    end while
+	#    i ? i + 1
+	#end while
+	
+	# $s0 is first index of the array
+	# $s1  number of elements
+	li $s3,1 #i
+	li $s4,0 #j
+	firstWhile:	
+		bgt $s3,$s1,insertionSort_exit
+		move $s4,$s3
+		subi $s4, $s4, 1
+		secondWhile:
+			blez $s4,firstWhile_exit
+			mul $s5,$s4,4
+			add $s5,$s0,$s5
+			addi $s6,$s5,-4
+			lw $t0,($s5)
+			lw $t1,($s6)
+			ble $t1,$t0,firstWhile_exit
+			#Start swap
+			sw $t0,($s6)
+			sw $t1,($s5)
+			subi $s4, $s4,1
+			j secondWhile
+		
+	firstWhile_exit:
+		addi $s3,$s3,1
+		j firstWhile
+	
+insertionSort_exit:
+    	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	lw $s6, 0($sp)
+	addi $sp, $sp, 4	
+	lw $s5, 0($sp)
+	addi $sp, $sp, 4
+	lw $s4, 0($sp)
+	addi $sp, $sp, 4
+	lw $s3, 0($sp)
+	addi $sp, $sp, 4
+	lw $s2, 0($sp)
+	addi $sp, $sp, 4
+	lw $s1, 0($sp)
+	addi $sp, $sp, 4
+	lw $s0, 0($sp)
+	addi $sp, $sp, 4	
+	jr $ra
+		
+medianMode:
+	addi $sp, $sp, -4
+	sw $s0, 0($sp)
+	addi $sp, $sp, -4
+	sw $s1, 0($sp)
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	addi $sp, $sp, -4
+	sw $s3, 0($sp)
+	addi $sp, $sp, -4
+	sw $s4, 0($sp)  
+	addi $sp, $sp, -4
+	sw $s5, 0($sp)		
+	addi $sp, $sp, -4
+	sw $s6, 0($sp)
+	addi $sp, $sp, -4
+	sw $s7, 0($sp)
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	move $s0, $a0
+	move $s1, $a1
+	
+	median:
+		andi $s2, $s1, 1 #Check for the even and odd number of integers
+		beq $s2, 0, evenMedian
+		j oddMedian
+		
+		evenMedian:
+			div $s2, $s1, 2
+			mul $s2, $s2, 4
+			add $s2, $s2, $s0
+			subi $s3, $s2, 4
+			lw $s4, 0($s3)
+			lw $s5, 0($s3)
+			add $s6, $s4, $s5
+			div $s6, $s6, 2
+			move $v0, $s6						
+			j mode
+			
+		oddMedian:
+			div $s2, $s1, 2
+			mul $s2, $s2, 4
+			add $s2, $s2, $s0
+			lw $s3, 0($s2)
+			move $v0, $s3														
+
+	mode:
+		move $s2, $s0 #Current address
+		lw $s3, 0($s2) #Current number
+		move $s4, $s3 #Mode number
+		li $s5, 1 #Number of mode number in the array
+		li $s6, 1 #Count of the current number
+		li $s7, 1 #Count
+
+		traverseArray:
+			bge $s7, $s1, mode_exit
+			addi $s2, $s2, 4
+			lw $s3, 0($s2)
+			addi $s7, $s7, 1
+			addi $t0, $s2, -4
+			lw $t1, 0($t0) #Number before the current number
+			beq $s3, $t1, sameNumber
+			li $s6, 0
+			
+			sameNumber:
+				addi $s6, $s6, 1
+				bgt $s6, $s5, changeMode
+				j traverseArray
+				
+				changeMode:
+					move $s4,$s3
+					move $s5, $s6
+				j traverseArray
+	mode_exit:
+		move $v1, $s4
+	
+medianMode_exit:
+    	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	lw $s7, 0($sp)
+	addi $sp, $sp, 4	
+	lw $s6, 0($sp)
+	addi $sp, $sp, 4	
+	lw $s5, 0($sp)
+	addi $sp, $sp, 4
+	lw $s4, 0($sp)
+	addi $sp, $sp, 4
+	lw $s3, 0($sp)
+	addi $sp, $sp, 4
+	lw $s2, 0($sp)
+	addi $sp, $sp, 4
+	lw $s1, 0($sp)
+	addi $sp, $sp, 4
+	lw $s0, 0($sp)
+	addi $sp, $sp, 4	
+	jr $ra
+
+printArray:
+	addi $sp, $sp, -4
+	sw $s0, 0($sp)
+	addi $sp, $sp, -4
+	sw $s1, 0($sp)
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	move $s0, $a0
+	move $s1, $a1
+	
+	la $a0, printArrayStr
+	li $v0, 4
+	syscall
+	
+	mul $s1, $s1, 4
+	add $s1, $s1, $s0
+	while:
+		bge $s0, $s1, printArray_exit
+		lw $s2, 0($s0)
+		addi $s0, $s0, 4
+		
+		li $v0, 1
+		move $a0, $s2
+		syscall
+		
+		la $a0, printSpace
+		li $v0, 4
+		syscall
+		
+		j while
+		
+		
+printArray_exit:
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4	
+	lw $s2, 0($sp)
+	addi $sp, $sp, 4
+	lw $s1, 0($sp)
+	addi $sp, $sp, 4
+	lw $s0, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+	
